@@ -25,7 +25,12 @@ def get_emb(subset, text_encoder, save_file):
 
 def main(args):
     # Modify the config file for advanced settings and extensions.
-    config_file = f'configs/emb/gte-large-en-v1.5/{args.dataset}.yaml'
+    # 支持通过参数指定编码器类型，默认为英文编码器
+    if hasattr(args, 'encoder') and args.encoder:
+        encoder_name = args.encoder
+    else:
+        encoder_name = 'gte-large-en-v1.5'
+    config_file = f'configs/emb/{encoder_name}/{args.dataset}.yaml'
     config = load_yaml(config_file)
     
     torch.set_num_threads(config['env']['num_threads'])
@@ -71,8 +76,12 @@ def main(args):
     if text_encoder_name == 'gte-large-en-v1.5':
         from src.model.text_encoders import GTELargeEN
         text_encoder = GTELargeEN(device)
+    elif text_encoder_name == 'gte-multilingual-base':
+        from src.model.text_encoders import GTEMultilingualBase
+        text_encoder = GTEMultilingualBase(device)
     else:
-        raise NotImplementedError(text_encoder_name)
+        raise NotImplementedError(f'Text encoder  {text_encoder_name} is not supported. '
+                                 f'Supported encoders: gte-large-en-v1.5, gte-multilingual-base')
     
     emb_save_dir = f'data_files/{args.dataset}/emb/{text_encoder_name}'
     os.makedirs(emb_save_dir, exist_ok=True)
@@ -87,6 +96,9 @@ if __name__ == '__main__':
     parser = ArgumentParser('Text Embedding Pre-Computation for Retrieval')
     parser.add_argument('-d', '--dataset', type=str, required=True, 
                         choices=['webqsp', 'cwq'], help='Dataset name')
+    parser.add_argument('-e', '--encoder', type=str, default=None,
+                        help='Encoder name (e.g., gte-large-en-v1.5, gte-multilingual-base). '
+                             'If not specified, will use the encoder in config file.')
     args = parser.parse_args()
     
     main(args)

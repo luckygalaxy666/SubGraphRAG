@@ -1,1 +1,2 @@
 from .gte_large_en import GTELargeEN
+from .gte_multilingual_base import GTEMultilingualBase

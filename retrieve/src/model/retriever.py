@@ -85,7 +85,8 @@ class Retriever(nn.Module):
         topic_entity_one_hot
     ):
         device = entity_embs.device
-        
+        if entity_embs.shape[-1] != self.non_text_entity_emb.weight.shape[-1]:
+            entity_embs = entity_embs[:, :self.non_text_entity_emb.weight.shape[-1]]
         h_e = torch.cat(
             [
                 entity_embs,

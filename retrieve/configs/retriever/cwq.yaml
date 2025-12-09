@@ -6,7 +6,7 @@ env:
 
 dataset:
   name: 'cwq'
-  text_encoder_name: 'gte-large-en-v1.5'
+  text_encoder_name: 'gte-multilingual-base'
 
 retriever:
   topic_pe: true
