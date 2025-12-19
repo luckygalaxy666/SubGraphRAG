@@ -70,9 +70,11 @@ Once trained, there will be a folder in the current directory of the form `{data
 ### Inference
 
 ```bash
-python inference.py -p P
+python inference.py -p P [--export_csv]
 ```
 where `P` is the path to a saved model checkpoint. The predicted retrieval result will be stored in the same folder as the model checkpoint. For example, if `P` is `webqsp_Nov08-01:14:47/cpt.pth`, then the retrieval result will be saved as `webqsp_Nov08-01:14:47/retrieval_result.pth`.
+
+Adding `--export_csv` also writes `retrieval_result.csv` in the same folder, containing the scored triples sorted by score together with the question ID and rank. Rows follow the inference order of the dataset for easier alignment with other logs.
 
 ### Evaluation
 
