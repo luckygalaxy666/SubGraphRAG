@@ -39,7 +39,16 @@ class RetrieverDataset:
         processed_file = os.path.join(
             f'data_files/{dataset_name}/processed/{split}.pkl')
         with open(processed_file, 'rb') as f:
-            return pickle.load(f)
+            processed_dict_list = pickle.load(f)
+        
+        # 减少样本数量，用于测试；训练集和验证集各取一半 2026-01-08
+        if split in ['train', 'valid']:
+            num_samples = len(processed_dict_list)
+            print(f'Original number of samples in {split}: {num_samples}')
+            processed_dict_list = processed_dict_list[:(num_samples // 2)]
+            print(f'Reduced number of samples in {split}: {len(processed_dict_list)}')
+
+        return processed_dict_list
 
     def _get_triple_scores(
         self,

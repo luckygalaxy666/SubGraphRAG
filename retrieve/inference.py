@@ -2,6 +2,7 @@ import csv
 import os
 import re
 import torch
+from datetime import datetime
 
 from tqdm import tqdm
 
@@ -118,8 +119,30 @@ def main(args):
         target_relevant_triples = []
 
         if len(h_id_tensor) != 0:
+            # Manually create ts_id_tensor, handling cases where time_list might be missing.
+            time_list = raw_sample.get('time_list')
+            if not time_list:
+                num_triples = len(raw_sample.get('h_id_list', []))
+                time_list = ['0'] * num_triples
+            
+            time_float_list = []
+            for t in time_list:
+                if not t:
+                    continue
+                try:
+                    # Try YYYY-MM-DD format first
+                    time_float_list.append(datetime.strptime(t, '%Y-%m-%d').timestamp())
+                except ValueError:
+                    try:
+                        # Fallback to assuming it's a year or other float
+                        time_float_list.append(float(t))
+                    except ValueError:
+                        # If all parsing fails, append a default value
+                        time_float_list.append(0.0)
+            ts_id_tensor = torch.tensor(time_float_list, dtype=torch.float32).to(device)
+
             pred_triple_logits = model(
-                h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,
+                h_id_tensor, r_id_tensor, t_id_tensor, ts_id_tensor, q_emb, entity_embs,
                 num_non_text_entities, relation_embs, topic_entity_one_hot)
             pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
             top_K_results = torch.topk(pred_triple_scores, 

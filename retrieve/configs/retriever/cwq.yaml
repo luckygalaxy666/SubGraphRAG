@@ -22,5 +22,5 @@ eval:
 
 train:
   num_epochs: 10000
-  patience: 10
+  patience: 5
   save_prefix: 'cwq'

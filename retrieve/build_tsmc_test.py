@@ -28,7 +28,7 @@ def load_triples(csv_path: Path):
             head = row[0]
             rel = row[2]
             tail = row[3] if len(row) > 3 else ''
-            time_val = row[5] if len(row) > 5 else ''
+            time_val = row[5] if len(row) > 5 and row[5] else '0'
             triples.append((head, rel, tail, time_val))
     return triples
 

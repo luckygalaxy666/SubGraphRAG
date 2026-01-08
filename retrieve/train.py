@@ -5,6 +5,7 @@ import time
 import torch
 import torch.nn.functional as F
 import wandb
+from datetime import datetime
 
 from collections import defaultdict
 from torch.optim import Adam
@@ -17,18 +18,45 @@ from src.model.retriever import Retriever
 from src.setup import set_seed, prepare_sample
 
 @torch.no_grad()
-def eval_epoch(config, device, data_loader, model):
+def eval_epoch(config, device, val_set, collate_fn, model):
     model.eval()
     
     metric_dict = defaultdict(list)
     
-    for sample in tqdm(data_loader):
+    for i in tqdm(range(len(val_set))):
+        raw_sample = val_set[i]
+        sample = collate_fn([raw_sample])
         h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,\
         num_non_text_entities, relation_embs, topic_entity_one_hot,\
         target_triple_probs, a_entity_id_list = prepare_sample(device, sample)
 
+        if len(h_id_tensor) == 0:
+            continue
+
+        # Manually create ts_id_tensor, handling cases where time_list might be missing.
+        time_list = raw_sample.get('time_list')
+        if not time_list:
+            num_triples = len(raw_sample.get('h_id_list', []))
+            time_list = ['0'] * num_triples
+        
+        time_float_list = []
+        for t in time_list:
+            if not t:
+                continue
+            try:
+                # Try YYYY-MM-DD format first
+                time_float_list.append(datetime.strptime(t, '%Y-%m-%d').timestamp())
+            except ValueError:
+                try:
+                    # Fallback to assuming it's a year or other float
+                    time_float_list.append(float(t))
+                except ValueError:
+                    # If all parsing fails, append a default value
+                    time_float_list.append(0.0)
+        ts_id_tensor = torch.tensor(time_float_list, dtype=torch.float32).to(device)
+
         pred_triple_logits = model(
-            h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,
+            h_id_tensor, r_id_tensor, t_id_tensor, ts_id_tensor, q_emb, entity_embs,
             num_non_text_entities, relation_embs, topic_entity_one_hot).reshape(-1)
         
         # Triple ranking
@@ -64,10 +92,17 @@ def eval_epoch(config, device, data_loader, model):
     
     return metric_dict
 
-def train_epoch(device, train_loader, model, optimizer):
+def train_epoch(device, train_set, collate_fn, model, optimizer):
     model.train()
     epoch_loss = 0
-    for sample in tqdm(train_loader):
+    
+    # Create a shuffled order to iterate through the dataset
+    indices = np.arange(len(train_set))
+    np.random.shuffle(indices)
+
+    for i in tqdm(indices):
+        raw_sample = train_set[i]
+        sample = collate_fn([raw_sample])
         h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,\
         num_non_text_entities, relation_embs, topic_entity_one_hot,\
         target_triple_probs, a_entity_id_list = prepare_sample(device, sample)
@@ -75,8 +110,30 @@ def train_epoch(device, train_loader, model, optimizer):
         if len(h_id_tensor) == 0:
             continue
 
+        # Manually create ts_id_tensor, handling cases where time_list might be missing.
+        time_list = raw_sample.get('time_list')
+        if not time_list:
+            num_triples = len(raw_sample.get('h_id_list', []))
+            time_list = ['0'] * num_triples
+
+        time_float_list = []
+        for t in time_list:
+            if not t:
+                continue
+            try:
+                # Try YYYY-MM-DD format first
+                time_float_list.append(datetime.strptime(t, '%Y-%m-%d').timestamp())
+            except ValueError:
+                try:
+                    # Fallback to assuming it's a year or other float
+                    time_float_list.append(float(t))
+                except ValueError:
+                    # If all parsing fails, append a default value
+                    time_float_list.append(0.0)
+        ts_id_tensor = torch.tensor(time_float_list, dtype=torch.float32).to(device)
+
         pred_triple_logits = model(
-            h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,
+            h_id_tensor, r_id_tensor, t_id_tensor, ts_id_tensor, q_emb, entity_embs,
             num_non_text_entities, relation_embs, topic_entity_one_hot)
         target_triple_probs = target_triple_probs.to(device).unsqueeze(-1)
         loss = F.binary_cross_entropy_with_logits(
@@ -88,7 +145,7 @@ def train_epoch(device, train_loader, model, optimizer):
         loss = loss.item()
         epoch_loss += loss
     
-    epoch_loss /= len(train_loader)
+    epoch_loss /= len(train_set)
     
     log_dict = {'loss': epoch_loss}
     return log_dict
@@ -109,9 +166,11 @@ def main(args):
     wandb.init(
         project=f'{args.dataset}',
         name=exp_name,
-        config=config_df.to_dict(orient='records')[0]
+        config=config_df.to_dict(orient='records')[0],
+        mode='offline'
     )
     os.makedirs(exp_name, exist_ok=True)
+    print(f'Model and results will be saved to: {exp_name}')
 
     train_set = RetrieverDataset(config=config, split='train')
     val_set = RetrieverDataset(config=config, split='val')
@@ -130,7 +189,7 @@ def main(args):
     for epoch in range(config['train']['num_epochs']):
         num_patient_epochs += 1
         
-        val_eval_dict = eval_epoch(config, device, val_loader, model)
+        val_eval_dict = eval_epoch(config, device, val_set, collate_retriever, model)
         target_val_metric = val_eval_dict['triple_recall@100']
         
         if target_val_metric > best_val_metric:
@@ -147,7 +206,7 @@ def main(args):
                 val_log[f'val/{key}'] = val
             wandb.log(val_log)
 
-        train_log_dict = train_epoch(device, train_loader, model, optimizer)
+        train_log_dict = train_epoch(device, train_set, collate_retriever, model, optimizer)
         
         train_log_dict.update({
             'num_patient_epochs': num_patient_epochs,
