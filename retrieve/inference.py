@@ -126,12 +126,15 @@ def main(args):
                 time_list = ['0'] * num_triples
             
             time_float_list = []
+            # time_list格式为['2024-01-01', '2024-01-02', '2024-01-03'] 未排序
+            # 得到起始时间 
+            start_time = datetime.strptime(min(time_list), '%Y-%m-%d').day
             for t in time_list:
                 if not t:
                     continue
                 try:
                     # Try YYYY-MM-DD format first
-                    time_float_list.append(datetime.strptime(t, '%Y-%m-%d').timestamp())
+                    time_float_list.append(datetime.strptime(t, '%Y-%m-%d').day - start_time)
                 except ValueError:
                     try:
                         # Fallback to assuming it's a year or other float
@@ -139,6 +142,8 @@ def main(args):
                     except ValueError:
                         # If all parsing fails, append a default value
                         time_float_list.append(0.0)
+            # print(f'time_float_list: {time_float_list}')
+            
             ts_id_tensor = torch.tensor(time_float_list, dtype=torch.float32).to(device)
 
             pred_triple_logits = model(
