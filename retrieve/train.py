@@ -16,7 +16,7 @@ from src.config.retriever import load_yaml
 from src.dataset.retriever import RetrieverDataset, collate_retriever
 from src.model.retriever import Retriever
 from src.setup import set_seed, prepare_sample
-
+os.environ["WANDB_API_KEY"] = "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"
 @torch.no_grad()
 def eval_epoch(config, device, val_set, collate_fn, model):
     model.eval()
@@ -166,8 +166,7 @@ def main(args):
     wandb.init(
         project=f'{args.dataset}',
         name=exp_name,
-        config=config_df.to_dict(orient='records')[0],
-        mode='offline'
+        config=config_df.to_dict(orient='records')[0]
     )
     os.makedirs(exp_name, exist_ok=True)
     print(f'Model and results will be saved to: {exp_name}')

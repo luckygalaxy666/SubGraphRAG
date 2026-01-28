@@ -117,31 +117,18 @@ def main(args):
         time_list = raw_sample.get('time_list', None)
         top_K_triples = []
         target_relevant_triples = []
-
+        time_float_list = []
         if len(h_id_tensor) != 0:
             # Manually create ts_id_tensor, handling cases where time_list might be missing.
             time_list = raw_sample.get('time_list')
             if not time_list:
                 num_triples = len(raw_sample.get('h_id_list', []))
                 time_list = ['0'] * num_triples
-            
-            time_float_list = []
-            # time_list格式为['2024-01-01', '2024-01-02', '2024-01-03'] 未排序
-            # 得到起始时间 
-            start_time = datetime.strptime(min(time_list), '%Y-%m-%d').day
-            for t in time_list:
-                if not t:
-                    continue
-                try:
-                    # Try YYYY-MM-DD format first
-                    time_float_list.append(datetime.strptime(t, '%Y-%m-%d').day - start_time)
-                except ValueError:
-                    try:
-                        # Fallback to assuming it's a year or other float
-                        time_float_list.append(float(t))
-                    except ValueError:
-                        # If all parsing fails, append a default value
-                        time_float_list.append(0.0)
+                time_float_list = [0.0] * num_triples
+            else:
+                start_time = datetime.strptime(min(time_list), '%Y-%m-%d').day
+                for t in time_list:
+                    time_float_list.append(datetime.strptime(t, '%Y-%m-%d').day - start_time)       # 转换为距离起始时间的天数
             # print(f'time_float_list: {time_float_list}')
             
             ts_id_tensor = torch.tensor(time_float_list, dtype=torch.float32).to(device)

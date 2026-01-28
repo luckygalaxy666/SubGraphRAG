@@ -175,14 +175,14 @@ class Retriever(nn.Module):
 
         # Encode the triple's own timestamp and apply the context weight.
         base_h_ts = self.time_encoder(ts_id_tensor.unsqueeze(-1))
-        h_ts = base_h_ts * temporal_context_weight.unsqueeze(-1)
-        print(f'ts_id_tensor: {ts_id_tensor}')
-        print(f'base_h_ts: {base_h_ts}')
-        print(f'temporal_context_weight: {temporal_context_weight}')
-        print(f'h_ts: {h_ts}')
-        print(f'h_e[h_id_tensor]: {h_e[h_id_tensor]}')
-        print(f'h_r: {h_r}')
-        print(f'h_e[t_id_tensor]: {h_e[t_id_tensor]}')
+        h_ts = base_h_ts * temporal_context_weight.unsqueeze(-1) *0.2
+        # print(f'ts_id_tensor: {ts_id_tensor}')
+        # print(f'base_h_ts: {base_h_ts}')
+        # print(f'temporal_context_weight: {temporal_context_weight}')
+        # print(f'h_ts: {h_ts}')
+        # print(f'h_e[h_id_tensor]: {h_e[h_id_tensor]}')
+        # print(f'h_r: {h_r}')
+        # print(f'h_e[t_id_tensor]: {h_e[t_id_tensor]}')
 
         h_triple = torch.cat([
             h_q.expand(len(h_r), -1),

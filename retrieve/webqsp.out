@@ -1,0 +1,30 @@
+/root/miniconda3/envs/retriever/lib/python3.10/site-packages/torch_geometric/typing.py:54: UserWarning: An issue occurred while importing 'pyg-lib'. Disabling its usage. Stacktrace: Could not load this library: /root/miniconda3/envs/retriever/lib/python3.10/site-packages/libpyg.so
+  warnings.warn(f"An issue occurred while importing 'pyg-lib'. "
+/root/miniconda3/envs/retriever/lib/python3.10/site-packages/torch_geometric/typing.py:110: UserWarning: An issue occurred while importing 'torch-sparse'. Disabling its usage. Stacktrace: Could not load this library: /root/miniconda3/envs/retriever/lib/python3.10/site-packages/libpyg.so
+  warnings.warn(f"An issue occurred while importing 'torch-sparse'. "
+wandb: Tracking run with wandb version 0.17.4
+wandb: W&B syncing is set to `offline` in this directory.  
+wandb: Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+Model and results will be saved to: webqsp_Jan12-01:30:36
+Original number of samples in train: 2848
+Reduced number of samples in train: 1424
+Traceback (most recent call last):
+  File "/root/SubgraphRAG/retrieve/train.py", line 227, in <module>
+    main(args)
+  File "/root/SubgraphRAG/retrieve/train.py", line 175, in main
+    train_set = RetrieverDataset(config=config, split='train')
+  File "/root/SubgraphRAG/retrieve/src/dataset/retriever.py", line 27, in __init__
+    emb_dict = self._load_emb(
+  File "/root/SubgraphRAG/retrieve/src/dataset/retriever.py", line 195, in _load_emb
+    dict_file = torch.load(file_path)
+  File "/root/miniconda3/envs/retriever/lib/python3.10/site-packages/torch/serialization.py", line 1484, in load
+    with _open_file_like(f, "rb") as opened_file:
+  File "/root/miniconda3/envs/retriever/lib/python3.10/site-packages/torch/serialization.py", line 759, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/root/miniconda3/envs/retriever/lib/python3.10/site-packages/torch/serialization.py", line 740, in __init__
+    super().__init__(open(name, mode))
+FileNotFoundError: [Errno 2] No such file or directory: 'data_files/webqsp/emb/gte-large-en-v1.5/train.pth'
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /root/SubgraphRAG/retrieve/wandb/offline-run-20260112_093037-fipc69mo
+wandb: Find logs at: ./wandb/offline-run-20260112_093037-fipc69mo/logs
+wandb: WARNING The new W&B backend becomes opt-out in version 0.18.0; try it out with `wandb.require("core")`! See https://wandb.me/wandb-core for more information.

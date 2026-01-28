@@ -11,8 +11,8 @@ dataset:
 retriever:
   topic_pe: true
   DDE_kwargs:
-    num_rounds: 2
-    num_reverse_rounds: 2
+    num_rounds: 1
+    num_reverse_rounds: 1
 
 optimizer:
   lr: 1e-3

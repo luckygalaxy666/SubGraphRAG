@@ -17,7 +17,7 @@ def main(args):
         if len(pred_dict[sample_id]['scored_triples']) == 0:
             continue
         
-        h_list, r_list, t_list, _ = zip(*pred_dict[sample_id]['scored_triples'])
+        h_list, r_list, t_list, *unused = zip(*pred_dict[sample_id]['scored_triples'])
         
         a_entity_in_graph = set(pred_dict[sample_id]['a_entity_in_graph'])
         if len(a_entity_in_graph) > 0:
